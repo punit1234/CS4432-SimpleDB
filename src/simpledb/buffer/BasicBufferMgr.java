@@ -121,7 +121,8 @@ class BasicBufferMgr {
 		buff.assignToNew(filename, fmtr);
 		numAvailable--;
 		buff.pin();
-
+		//CS4432-Project1:
+		//Set second chance bit & put in hashmap
 		buff.setSecondChance(true);
 		mapIDtoIndex.put(buff.block().hashCode(), buff.getPoolIndex());
 
