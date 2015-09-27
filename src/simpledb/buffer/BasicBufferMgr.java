@@ -138,8 +138,10 @@ class BasicBufferMgr {
 		// }
 		// return null;
 		Integer i = mapIDtoIndex.get(blk.hashCode());
+		if(i != null)	
+			System.out.println("Block ID " + blk.number()+ " exists at Index "+  i.toString() + " of the buffer pool");
 		// if it doesnt exist
-		if (i == null) {
+		else {
 			return null;
 		}
 		Buffer b = bufferpool[i];
@@ -159,6 +161,7 @@ class BasicBufferMgr {
 	private Buffer chooseUnpinnedBuffer() {
 		// 2.1
 		// CHECK FOR EMPTY FRAME FIRST;
+
 		for (Buffer buff : bufferpool)
 			if (buff.block() == null)
 				return buff;
@@ -166,13 +169,17 @@ class BasicBufferMgr {
 		
 		
 		//2.3 Efficient Replacement Policy Clock
-		if (replacementPolicy.equals("clock")) {
+		if (replacementPolicy.equals("Clock")) {
 			while (true) {
 				Buffer buff = bufferpool[clockHand];
 				if (!buff.isPinned()) {
-					if (buff.isSecondChance())
+					if (buff.isSecondChance()){
+						System.out.println("Buffer at clockhand "+ clockHand + " has a second chance.");
 						buff.setSecondChance(false);
+					}
 					else {
+						System.out.println("Buffer at clockhand "+ clockHand + " is being removed.");
+
 						mapIDtoIndex.remove(buff.block().hashCode());
 						return buff;
 					}
