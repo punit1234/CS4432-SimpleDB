@@ -184,17 +184,6 @@ class BasicBufferMgr {
 	 int clockHand = 0;
 
 	private Buffer chooseUnpinnedBuffer() {
-<<<<<<< HEAD
-		// 2.1
-		// CHECK FOR EMPTY FRAME FIRST;
-
-		for (Buffer buff : bufferpool)
-			if (buff.block() == null)
-				return buff;
-		
-		
-		
-=======
 		// CS4432-Project1:
 		//2.1 CHECK FOR EMPTY FRAME FIRST;
 		if(!freespaces.isEmpty()){
@@ -207,7 +196,6 @@ class BasicBufferMgr {
 
 		  }
 		//CS4432-Project1: 
->>>>>>> origin/master
 		//2.3 Efficient Replacement Policy Clock
 		if (replacementPolicy.equals("Clock")) {
 			while (true) {
