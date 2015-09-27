@@ -15,10 +15,12 @@ import simpledb.file.*;
 public class Buffer {
 	private Page contents = new Page();
 	private Block blk = null;
-	private int pins = 0;
-	private int modifiedBy = -1; // negative means not modified
-	private int logSequenceNumber = -1; // negative means no corresponding log
+	private int pins = 0; // CS 4432-Project1: pin counter
+	private int modifiedBy = -1; // CS 4432-Project1:negative means not modified
+	private int logSequenceNumber = -1; // CS 4432-Project1: negative means no corresponding log
 										// record
+	private int bufferID; // CS 4432-Project1: integer for the buffer's ID
+	private long lastModified = 0; // CS 4432-Project1: dirty bit.
 	/**
 	 * CS4432-Project1:
 	 * Second chance bit used for Clock Replacement Policy
@@ -65,7 +67,16 @@ public class Buffer {
 	 */
 	public Buffer() {
 	}
-
+	
+	   /**
+	    * CS4432-Project1
+	    * Creates a new buffer with the given buffer ID.
+	    * @param bufID the ID of the new buffer
+	    */
+	   public Buffer(int bufID) {
+		   this.bufferID = bufID;
+		   updateTime();
+	   }
 	/**
 	 * Returns the integer value at the specified offset of the buffer's page.
 	 * If an integer was not stored at that location, the behavior of the method
@@ -76,6 +87,7 @@ public class Buffer {
 	 * @return the integer value at that offset
 	 */
 	public int getInt(int offset) {
+		updateTime();
 		return contents.getInt(offset);
 	}
 
@@ -89,9 +101,14 @@ public class Buffer {
 	 * @return the string value at that offset
 	 */
 	public String getString(int offset) {
+		updateTime(); // // CS4432-project1 updates time
 		return contents.getString(offset);
 	}
 
+    // CS4432-project1 Obtains last modified date
+    public long getLastModifiedDate(){
+    	return lastModified;
+    }
 	/**
 	 * Writes an integer to the specified offset of the buffer's page. This
 	 * method assumes that the transaction has already written an appropriate
@@ -113,6 +130,7 @@ public class Buffer {
 		if (lsn >= 0)
 			logSequenceNumber = lsn;
 		contents.setInt(offset, val);
+		updateTime();
 	}
 
 	/**
@@ -136,6 +154,7 @@ public class Buffer {
 		if (lsn >= 0)
 			logSequenceNumber = lsn;
 		contents.setString(offset, val);
+		updateTime();
 	}
 
 	/**
@@ -159,11 +178,17 @@ public class Buffer {
 			modifiedBy = -1;
 		}
 	}
+	
+	 //CS4432-Project1: This method sets update modify time as now
+	   private void updateTime() {
+		   lastModified = System.currentTimeMillis();
+	   }
 
 	/**
 	 * Increases the buffer's pin count.
 	 */
 	void pin() {
+		updateTime();
 		pins++;
 	}
 
@@ -209,6 +234,7 @@ public class Buffer {
 		blk = b;
 		contents.read(blk);
 		pins = 0;
+		updateTime();
 	}
 
 	/**
@@ -226,6 +252,7 @@ public class Buffer {
 		fmtr.format(contents);
 		blk = contents.append(filename);
 		pins = 0;
+		updateTime();
 	}
 	
 	/***
@@ -239,5 +266,10 @@ public class Buffer {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Buffer ID:" + getPoolIndex() + " Block Allocated: "+ block().toString() + " pinned: "+ pins);
 		return sb.toString();
+	}
+
+	public int getBufferID() {
+		// TODO Auto-generated method stub
+		return bufferID;
 	}
 }

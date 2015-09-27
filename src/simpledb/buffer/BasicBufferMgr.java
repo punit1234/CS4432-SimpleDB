@@ -1,6 +1,7 @@
 package simpledb.buffer;
 
 import java.util.HashMap;
+import java.util.Stack;
 
 import simpledb.file.*;
 
@@ -16,6 +17,7 @@ class BasicBufferMgr {
 	//CS4432-Project1:
 	//A Hashmap with Key blockID and value Index to Buffer Pool
 	private HashMap<Integer, Integer> mapIDtoIndex;
+	private Stack<Integer> freespaces;
 	private String replacementPolicy = "Clock";
 
 	/**
@@ -33,12 +35,15 @@ class BasicBufferMgr {
 	BasicBufferMgr(int numbuffs) {
 		bufferpool = new Buffer[numbuffs];
 		numAvailable = numbuffs;
+	
 		mapIDtoIndex = new HashMap<Integer, Integer>(numbuffs);
-
+		//CS4432-Project1: Push all indexes into free spaces
+		freespaces = new Stack<Integer>(); 
 		for (int i = 0; i < numbuffs; i++) {
 			Buffer b = new Buffer();
 			b.setPoolIndex(i);
 			bufferpool[i] = b;
+			freespaces.push(numbuffs -1 - i); 
 		}
 	}
 
@@ -73,12 +78,27 @@ class BasicBufferMgr {
 			buff.assignToBlock(blk);
 			//CS4432-Project1:
 			//Set second chance bit
+			
 			buff.setSecondChance(true);
 			mapIDtoIndex.put(buff.block().hashCode(), buff.getPoolIndex());
 
 		}
 		if (!buff.isPinned())
 			numAvailable--;
+			//CS4432-Project1: searching for empty 
+			int bufferID = buff.getBufferID();
+			int position = freespaces.search(bufferID);
+			if (position > 0){
+				int[] temp = new int[position -1]; 
+				for (int i=0; i<position - 1; i++){
+					temp[i] = freespaces.pop();
+				}
+				freespaces.pop();
+				for (int i = 0;i<position-1;i++){
+					freespaces.push(temp[position-1-i]);
+				}
+			}
+	
 		buff.pin();
 		return buff;
 	}
@@ -145,9 +165,14 @@ class BasicBufferMgr {
 
 		return b;
 	}
+	
 	/**
 	 * CS4432-Project1:
-	 *  
+	 *  First checks freespaces for available free frames
+	 *  If there are no empty frames, use either Clock or LRU replacement policies
+	 */
+	
+	/**
 	 *  Clock hand Variable pointer;
 	 *  Initially pointing at the head of the Buffer Pool Array
 	 * 
@@ -156,14 +181,18 @@ class BasicBufferMgr {
 	 int clockHand = 0;
 
 	private Buffer chooseUnpinnedBuffer() {
-		// 2.1
-		// CHECK FOR EMPTY FRAME FIRST;
-		for (Buffer buff : bufferpool)
-			if (buff.block() == null)
-				return buff;
-		
-		
-		
+		// CS4432-Project1:
+		//2.1 CHECK FOR EMPTY FRAME FIRST;
+		if(!freespaces.isEmpty()){
+			int bufferID = freespaces.pop();
+			return bufferpool[bufferID];		
+		} 
+		else{
+		  if(numAvailable == 0){
+			  return null;	  
+
+		  }
+		//CS4432-Project1: 
 		//2.3 Efficient Replacement Policy Clock
 		if (replacementPolicy.equals("clock")) {
 			while (true) {
@@ -182,7 +211,28 @@ class BasicBufferMgr {
 					clockHand = 0;
 				}
 			}
-		} else {
+		}
+		//CS4432-Project1: 
+		//2.3 Efficient Replacement Policy LRU
+		if (replacementPolicy.equals("LRU")) {
+			while (true) { 
+		
+				int lru = 0;
+				long lruDate = bufferpool[0].getLastModifiedDate();
+				for(int i = 0; i < bufferpool.length-1; i++){
+					if(!bufferpool[i].isPinned() && bufferpool[i].getLastModifiedDate() < lruDate){
+						lruDate = bufferpool[i].getLastModifiedDate();
+						lru = i;		
+					}
+				}
+	
+			}
+				
+		}
+		
+		
+		
+		else {
 			// regular iterative search through to find a usable buffer
 
 			for (Buffer buff : bufferpool) {
@@ -201,6 +251,9 @@ class BasicBufferMgr {
 		return null;
 
 	}
+		}
+	
+	
 	/**
 	 * CS4432-Project1:
 	 * 2.5 Report Functions
