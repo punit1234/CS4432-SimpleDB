@@ -9,8 +9,12 @@ Task 2.2) Efficient Search for a Given Disk Block [20 Points]
 	We keep a hashmap because it is average O(1) to retrieve a diskblock assuming a good hashfunction. The hashmap maps blockID and returns the index in the buffer pool where that block currently resides in. 
 Task 2.3) Efficient Replacement Policy [20 Points]
 	LRU:
-		We have a field in Buffer.java that keeps track of when it was last used. We cycle through the buffer pool, and call Buffer.lrU and find the smallest recently used stamp. We know this is O(n) as we have to cycle through the whole pool to find the most recently used. 
-		A better idea would have been to make another array, the same size as the buffer pool, and to maintain and sort it based on when a buffer pool was last used. The front of the LRU array would be when it was most recently accessed. And the Bottom of the LRU array would be the least recently accessed. So when a frame is modified, we can just remove that frame from the LRU array and queue it at the front of the LRU array. When we need the Least recently used frame, we can just look at the end of the LRU array; then get the block ID, get the bufferPool Index from the hashmap that we maintain in task 2.2.
+		We have a field in Buffer.java that keeps track of when it was last used. We cycle through the buffer pool, and call Buffer.lrU and find the smallest recently used stamp based on the modified date. The LRU checks if a buffer is
+		pinned or not, and if the last modified date is less than the the LRU date (which is set to the newest recently modified date amongst all buffers in pool)
+		
+		We know this is O(n) as we have to cycle through the whole pool to find the most recently used. 
+		A better idea would have been to make another array, the same size as the buffer pool, and to maintain and sort it based on when a buffer pool was last used. The front of the LRU array would be when it was most recently accessed. And the Bottom of the LRU array would be the least recently accessed. 
+		So when a frame is modified, we can just remove that frame from the LRU array and queue it at the front of the LRU array. When we need the Least recently used frame, we can just look at the end of the LRU array; then get the block ID, get the bufferPool Index from the hashmap that we maintain in task 2.2.
 	Clock:
 		In Buffer.java, we keep track of a second life bit. In BasicBufferManager.java we have a variable called clock hand which keeps track of the index in the bufferPool at which the hand is pointing at. We cycle through and remove appropriately.
 
